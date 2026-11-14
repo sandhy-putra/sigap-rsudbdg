@@ -122,6 +122,25 @@ h1,h2,h3,.h b,.sd b{font-family:Georgia,"Times New Roman",serif;color:inherit}
 .education-pdf-card b{font-size:14px;line-height:1.4}
 .education-pdf-description{color:#5B6D82;font-size:12px;line-height:1.5}
 .education-pdf-action{display:flex;align-items:center;gap:5px;margin-top:auto;color:#14498F;font-size:12px;font-weight:700}
+.education-carousel{margin-top:12px}
+.education-carousel-slide[hidden]{display:none}
+.education-carousel-image{display:flex;height:clamp(300px,62vh,520px);align-items:center;justify-content:center;overflow:hidden;border:1px solid #D3DEEC;border-radius:10px;background:#EAF1F8}
+.education-carousel-image:focus-visible{outline:3px solid #8DB3DE;outline-offset:2px}
+.education-carousel-image img{display:block;width:100%;height:100%;object-fit:contain}
+.education-carousel-caption{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 2px;color:#0F2F57}
+.education-carousel-caption b{font-size:15px}
+.education-carousel-caption span{color:#14498F;font-size:12px;font-weight:700}
+.education-carousel-controls{display:flex;width:max-content;max-width:100%;align-items:center;justify-content:center;gap:4px;margin:12px auto 0;padding:4px;border:1px solid #DCE7F4;border-radius:999px;background:#F7FAFE}
+.education-carousel-controls>button{display:inline-flex;flex:0 0 40px;width:40px;min-width:40px;height:40px;min-height:40px;align-items:center;justify-content:center;padding:0;border:0;border-radius:50%;background:transparent;color:#14498F;font:inherit;font-weight:700;cursor:pointer}
+.education-carousel-controls>button:hover{background:#EAF3FC}
+.education-carousel-controls button:focus-visible{outline:3px solid #8DB3DE;outline-offset:2px}
+.education-carousel-page{min-width:48px;color:#4B5C73;font-size:13px;font-weight:700;text-align:center}
+.education-carousel-dots{display:flex;align-items:center;justify-content:center;gap:0}
+.education-carousel-controls .education-carousel-dots button{display:inline-flex;flex:0 0 32px;width:32px;min-width:32px;height:40px;min-height:40px;align-items:center;justify-content:center;padding:0;border:0;border-radius:50%;background:transparent;cursor:pointer}
+.education-carousel-dots button::before{content:"";display:block;width:8px;height:8px;border-radius:999px;background:#B6C5D8;transition:width .18s ease,background-color .18s ease}
+.education-carousel-dots button[aria-pressed="true"]::before{width:20px;background:#14498F}
+.education-carousel-dots button:hover{background:#EAF3FC}
+@media(max-width:600px){.education-carousel-controls{gap:2px;padding:3px}.education-carousel-controls>button{flex-basis:38px;width:38px;min-width:38px;height:38px;min-height:38px}.education-carousel-controls .education-carousel-dots button{flex-basis:28px;width:28px;min-width:28px;height:38px;min-height:38px}.education-carousel-image{height:clamp(240px,58vh,460px)}}
 @media(prefers-reduced-motion:reduce){.education-pdf-card{transition:none}.education-pdf-card:hover{transform:none}}
 </style>
 </head>
@@ -167,8 +186,106 @@ draw();
 </script>
 <script>
 (function(){
-var mediaCard=document.querySelector('#p-Edukasi .g > .c:nth-child(2)');
-if(!mediaCard)throw new Error('Bagian materi edukasi tidak ditemukan.');
+var educationGrid=document.querySelector('#p-Edukasi .g');
+if(!educationGrid||educationGrid.children.length<2)throw new Error('Bagian materi edukasi tidak ditemukan.');
+var mediaCard=educationGrid.children[1];
+educationGrid.removeChild(educationGrid.children[0]);
+var posterCard=document.createElement('div');
+posterCard.className='c';
+var posterHeading=document.createElement('h2');
+posterHeading.textContent='Poster dan Infografik';
+posterCard.appendChild(posterHeading);
+var carousel=document.createElement('div');
+carousel.className='education-carousel';
+carousel.setAttribute('role','region');
+carousel.setAttribute('aria-roledescription','carousel');
+carousel.setAttribute('aria-label','Poster dan infografik edukasi');
+carousel.setAttribute('aria-live','off');
+var images=[
+{title:'Alur Pasien IGD',file:'Flyer Alur 2.png',alt:'Infografik alur pasien IGD dari kedatangan, registrasi, triase, pemeriksaan, hingga pulang atau dirujuk.'},
+{title:'Triase IGD',file:'TRIASE.png',alt:'Infografik mengenai proses dan level triase IGD.'},
+{title:'Pengaduan IGD',file:'WA Pengaduan.png',alt:'Poster informasi pengaduan pelayanan IGD melalui WhatsApp.'}
+];
+var slides=[],dots=[];
+images.forEach(function(item){
+var slide=document.createElement('div');
+slide.className='education-carousel-slide';
+slide.setAttribute('role','group');
+slide.setAttribute('aria-roledescription','slide');
+slide.setAttribute('aria-label',item.title);
+var link=document.createElement('a');
+link.className='education-carousel-image';
+link.href='img/'+encodeURIComponent(item.file);
+link.target='_blank';
+link.rel='noopener noreferrer';
+var image=document.createElement('img');
+image.src=link.href;
+image.alt=item.alt;
+image.loading='lazy';
+link.appendChild(image);
+slide.appendChild(link);
+var caption=document.createElement('div');
+caption.className='education-carousel-caption';
+var title=document.createElement('b');
+title.textContent=item.title;
+var openText=document.createElement('span');
+openText.textContent='Buka gambar ↗';
+caption.appendChild(title);
+caption.appendChild(openText);
+slide.appendChild(caption);
+carousel.appendChild(slide);
+slides.push(slide);
+});
+var controls=document.createElement('div');
+controls.className='education-carousel-controls';
+var previous=document.createElement('button');
+previous.type='button';
+previous.setAttribute('aria-label','Poster sebelumnya');
+previous.textContent='‹';
+var pageNumber=document.createElement('span');
+pageNumber.className='education-carousel-page';
+pageNumber.setAttribute('aria-hidden','true');
+var dotsContainer=document.createElement('div');
+dotsContainer.className='education-carousel-dots';
+var pause=document.createElement('button');
+pause.type='button';
+var next=document.createElement('button');
+next.type='button';
+next.setAttribute('aria-label','Poster berikutnya');
+next.textContent='›';
+images.forEach(function(item,index){
+var dot=document.createElement('button');
+dot.type='button';
+dot.setAttribute('aria-label','Tampilkan poster '+item.title);
+dot.setAttribute('aria-pressed',String(index===0));
+dotsContainer.appendChild(dot);
+dots.push(dot);
+});
+controls.appendChild(previous);
+controls.appendChild(dotsContainer);
+controls.appendChild(pageNumber);
+controls.appendChild(pause);
+controls.appendChild(next);
+posterCard.appendChild(carousel);
+posterCard.appendChild(controls);
+educationGrid.insertBefore(posterCard,mediaCard);
+var currentSlide=0,autoPaused=window.matchMedia('(prefers-reduced-motion: reduce)').matches,hovered=false,focused=false,timer=null;
+function updateSlide(index){currentSlide=(index+images.length)%images.length;slides.forEach(function(slide,i){slide.hidden=i!==currentSlide});dots.forEach(function(dot,i){dot.setAttribute('aria-pressed',String(i===currentSlide))});pageNumber.textContent=(currentSlide+1)+' / '+images.length}
+function updateAutoplayButton(){pause.textContent=autoPaused?'▶':'Ⅱ';pause.setAttribute('aria-label',autoPaused?'Putar otomatis carousel':'Jeda otomatis carousel');pause.setAttribute('aria-pressed',String(autoPaused))}
+function stopAutoplay(){if(timer){window.clearInterval(timer);timer=null}}
+function startAutoplay(force){stopAutoplay();if(autoPaused||document.hidden||(!force&&(hovered||focused)))return;timer=window.setInterval(function(){updateSlide(currentSlide+1)},6000)}
+previous.addEventListener('click',function(){updateSlide(currentSlide-1);startAutoplay()});
+next.addEventListener('click',function(){updateSlide(currentSlide+1);startAutoplay()});
+dots.forEach(function(dot,index){dot.addEventListener('click',function(){updateSlide(index);startAutoplay()})});
+pause.addEventListener('click',function(){autoPaused=!autoPaused;updateAutoplayButton();startAutoplay(!autoPaused)});
+carousel.addEventListener('mouseenter',function(){hovered=true;stopAutoplay()});
+carousel.addEventListener('mouseleave',function(){hovered=false;startAutoplay()});
+carousel.addEventListener('focusin',function(){focused=true;stopAutoplay()});
+carousel.addEventListener('focusout',function(){window.setTimeout(function(){focused=carousel.contains(document.activeElement);startAutoplay()},0)});
+document.addEventListener('visibilitychange',startAutoplay);
+updateSlide(0);
+updateAutoplayButton();
+startAutoplay();
 var materials=[
 {title:'6 Langkah Cuci Tangan Pakai Sabun',file:'6 Langkah Cuci Tangan Pakai Sabun.pdf',description:'Panduan langkah mencuci tangan menggunakan sabun.',icon:'<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="#1683A8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 17V9a1.8 1.8 0 0 1 3.6 0v6-8a1.8 1.8 0 0 1 3.6 0v8-6a1.8 1.8 0 0 1 3.6 0v7-4a1.8 1.8 0 0 1 3.6 0v8c0 5-3 8-8 8h-2c-2.7 0-4.4-1.1-5.8-3.4l-3.1-5.1a1.8 1.8 0 0 1 3.1-1.8l1.4 2.2"/><path d="M5 5l1-2M3 11H1M10 3V1"/></svg>'},
 {title:'Cuci Tangan dan Etika Batuk',file:'Cuci Tangan dan Etika Batuk.pdf',description:'Materi kebersihan tangan dan etika batuk.',icon:'<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="#1683A8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 8a5 5 0 1 1 10 0v2c0 2 1 3 2 4l-2 2H12l-2-2c1-1 3-3 3-6z"/><path d="M14 16v2c0 2-1 3-3 4l2 2h10l2-2c-2-1-3-2-3-4v-2"/><path d="M8 11l-2-1M8 15H5M25 11l2-1"/></svg>'},
