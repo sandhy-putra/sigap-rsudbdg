@@ -113,7 +113,16 @@ h1,h2,h3,.h b,.sd b{font-family:Georgia,"Times New Roman",serif;color:inherit}
 .bed-room-counts strong::before{content:"";width:7px;height:7px;flex:none;border-radius:50%;background:#2875C7}
 .bed-room-counts>span{line-height:1.4}
 @media(max-width:600px){.bed-room-summary{grid-template-columns:minmax(0,1fr) minmax(112px,.75fr) 28px;gap:10px}.bed-room-name{gap:9px}.bed-room-name::before{width:32px;height:32px;font-size:16px}}
-.education-materials{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px;margin-top:12px}
+.education-materials{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:12px;margin-top:12px}
+#p-Edukasi .g{align-items:stretch}
+#p-Telepon .phone-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"emergency contacts" "complaint contacts";align-items:stretch}
+#p-Telepon .phone-emergency{grid-area:emergency}
+#p-Telepon .phone-contacts{display:flex;grid-area:contacts;flex-direction:column}
+#p-Telepon .phone-contacts>.l{flex:1}
+#p-Telepon .phone-complaint-poster{grid-area:complaint;padding:8px}
+.phone-complaint-poster a{display:block}
+.phone-complaint-poster img{display:block;width:100%;height:auto;border-radius:4px}
+@media(max-width:760px){#p-Telepon .phone-grid{grid-template-columns:minmax(0,1fr);grid-template-areas:"emergency" "complaint" "contacts"}}
 .education-pdf-card{display:flex;min-height:160px;flex-direction:column;align-items:flex-start;gap:10px;padding:16px;border:1px solid #D3DEEC;border-radius:10px;background:#F7FAFE;color:#0F2F57;text-decoration:none;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
 .education-pdf-card:hover{transform:translateY(-2px);border-color:#8DB3DE;box-shadow:0 6px 16px rgba(15,47,87,.09)}
 .education-pdf-card:focus-visible{outline:3px solid #8DB3DE;outline-offset:2px}
@@ -189,6 +198,26 @@ draw();
 var educationGrid=document.querySelector('#p-Edukasi .g');
 if(!educationGrid||educationGrid.children.length<2)throw new Error('Bagian materi edukasi tidak ditemukan.');
 var mediaCard=educationGrid.children[1];
+var phoneGrid=document.querySelector('#p-Telepon .g');
+if(!phoneGrid||phoneGrid.children.length<2)throw new Error('Bagian telepon penting tidak ditemukan.');
+phoneGrid.classList.add('phone-grid');
+phoneGrid.children[0].classList.add('phone-emergency');
+phoneGrid.children[1].classList.add('phone-contacts');
+var complaintCard=document.createElement('div');
+complaintCard.className='c phone-complaint-poster';
+var complaintLink=document.createElement('a');
+complaintLink.href='https://wa.me/628211501996';
+complaintLink.target='_blank';
+complaintLink.rel='noopener noreferrer';
+complaintLink.setAttribute('aria-label','Hubungi layanan pengaduan IGD melalui WhatsApp di 0821-150-1996');
+var complaintImage=document.createElement('img');
+complaintImage.src='img/WA Pengaduan.png';
+complaintImage.alt='Poster pengaduan IGD melalui WhatsApp 0821-150-1996';
+complaintImage.loading='lazy';
+complaintImage.decoding='async';
+complaintLink.appendChild(complaintImage);
+complaintCard.appendChild(complaintLink);
+phoneGrid.appendChild(complaintCard);
 educationGrid.removeChild(educationGrid.children[0]);
 var posterCard=document.createElement('div');
 posterCard.className='c';
