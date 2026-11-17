@@ -138,6 +138,22 @@ h1,h2,h3,.h b,.sd b{font-family:Georgia,"Times New Roman",serif;color:inherit}
 .education-pdf-card{display:flex;min-height:160px;flex-direction:column;align-items:flex-start;gap:10px;padding:16px;border:1px solid #D3DEEC;border-radius:10px;background:#F7FAFE;color:#0F2F57;text-decoration:none;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
 .education-pdf-card:hover{transform:translateY(-2px);border-color:#8DB3DE;box-shadow:0 6px 16px rgba(15,47,87,.09)}
 .education-pdf-card:focus-visible{outline:3px solid #8DB3DE;outline-offset:2px}
+.education-pdf-viewer[hidden]{display:none}
+.education-pdf-viewer{position:fixed;inset:0;z-index:2000;display:grid;grid-template-rows:auto auto minmax(0,1fr);height:100vh;height:100dvh;background:#fff}
+.education-pdf-viewer-header{display:flex;min-height:60px;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;background:#14498F;color:#fff}
+.education-pdf-viewer-title{overflow:hidden;font-size:15px;font-weight:700;text-overflow:ellipsis;white-space:nowrap}
+.education-pdf-viewer-close{display:inline-flex;min-height:40px;flex:none;align-items:center;justify-content:center;gap:7px;padding:0 13px;border:1px solid rgba(255,255,255,.55);border-radius:8px;background:#fff;color:#14498F;font:inherit;font-weight:700;cursor:pointer}
+.education-pdf-viewer-close:focus-visible{outline:3px solid #F2C300;outline-offset:2px}
+.education-pdf-viewer-controls{display:flex;min-height:48px;align-items:center;justify-content:center;gap:14px;padding:4px 12px;border-bottom:1px solid #D3DEEC;background:#F7FAFE}
+.education-pdf-viewer-controls button{min-width:40px;min-height:38px;border:1px solid #D3DEEC;border-radius:8px;background:#fff;color:#14498F;font:inherit;font-size:18px;font-weight:700;cursor:pointer}
+.education-pdf-viewer-controls button:disabled{opacity:.45;cursor:default}
+.education-pdf-viewer-controls button:focus-visible{outline:3px solid #8DB3DE;outline-offset:2px}
+.education-pdf-viewer-page{min-width:64px;color:#40536C;font-size:13px;font-weight:700;text-align:center}
+.education-pdf-viewer-stage{position:relative;overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:16px;background:#EAF1F8}
+.education-pdf-viewer-status{position:absolute;top:50%;left:50%;width:min(90%,420px);transform:translate(-50%,-50%);color:#40536C;font-size:14px;line-height:1.55;text-align:center}
+.education-pdf-viewer-canvas{display:block;max-width:100%;height:auto;background:#fff;box-shadow:0 2px 12px rgba(15,47,87,.16)}
+.education-pdf-viewer-canvas[hidden]{display:none}
+.education-pdf-viewer-open{overflow:hidden}
 .education-pdf-icon{display:grid;width:42px;height:46px;place-items:center;flex:none;border:1px solid #D6E4F3;border-radius:8px;background:#EAF3FC;color:#14498F}
 .education-pdf-icon svg{display:block;width:25px;height:29px}
 .education-pdf-card b{font-size:14px;line-height:1.4}
@@ -453,12 +469,156 @@ var grid=mediaCard.querySelector('.tg');
 if(!grid)throw new Error('Wadah materi edukasi tidak ditemukan.');
 grid.className='education-materials';
 grid.textContent='';
+var pdfViewer=document.createElement('div');
+pdfViewer.className='education-pdf-viewer';
+pdfViewer.hidden=true;
+pdfViewer.setAttribute('role','dialog');
+pdfViewer.setAttribute('aria-modal','true');
+pdfViewer.setAttribute('aria-labelledby','educationPdfViewerTitle');
+var pdfViewerHeader=document.createElement('div');
+pdfViewerHeader.className='education-pdf-viewer-header';
+var pdfViewerTitle=document.createElement('span');
+pdfViewerTitle.className='education-pdf-viewer-title';
+pdfViewerTitle.id='educationPdfViewerTitle';
+var pdfViewerClose=document.createElement('button');
+pdfViewerClose.type='button';
+pdfViewerClose.className='education-pdf-viewer-close';
+pdfViewerClose.textContent='Kembali ke Edukasi';
+pdfViewerClose.setAttribute('aria-label','Tutup pratinjau dan kembali ke materi edukasi');
+var pdfViewerControls=document.createElement('div');
+pdfViewerControls.className='education-pdf-viewer-controls';
+var pdfPrevious=document.createElement('button');
+pdfPrevious.type='button';
+pdfPrevious.textContent='‹';
+pdfPrevious.setAttribute('aria-label','Halaman sebelumnya');
+var pdfPageCounter=document.createElement('span');
+pdfPageCounter.className='education-pdf-viewer-page';
+pdfPageCounter.setAttribute('aria-live','polite');
+var pdfNext=document.createElement('button');
+pdfNext.type='button';
+pdfNext.textContent='›';
+pdfNext.setAttribute('aria-label','Halaman berikutnya');
+var pdfViewerStage=document.createElement('div');
+pdfViewerStage.className='education-pdf-viewer-stage';
+pdfViewerStage.tabIndex=-1;
+var pdfViewerStatus=document.createElement('div');
+pdfViewerStatus.className='education-pdf-viewer-status';
+pdfViewerStatus.setAttribute('role','status');
+var pdfCanvas=document.createElement('canvas');
+pdfCanvas.className='education-pdf-viewer-canvas';
+pdfCanvas.hidden=true;
+pdfViewerHeader.appendChild(pdfViewerTitle);
+pdfViewerHeader.appendChild(pdfViewerClose);
+pdfViewerControls.appendChild(pdfPrevious);
+pdfViewerControls.appendChild(pdfPageCounter);
+pdfViewerControls.appendChild(pdfNext);
+pdfViewerStage.appendChild(pdfViewerStatus);
+pdfViewerStage.appendChild(pdfCanvas);
+pdfViewer.appendChild(pdfViewerHeader);
+pdfViewer.appendChild(pdfViewerControls);
+pdfViewer.appendChild(pdfViewerStage);
+document.body.appendChild(pdfViewer);
+var activePdfLink=null,pdfJsPromise=null,pdfLoadingTask=null,pdfDocument=null,pdfRenderTask=null,pdfPageNumber=1,pdfViewerRequest=0;
+function loadPdfJs(){
+if(!pdfJsPromise)pdfJsPromise=import(new URL('js/pdfjs/pdf.min.js',document.baseURI).href).then(function(library){library.GlobalWorkerOptions.workerSrc=new URL('js/pdfjs/pdf.worker.min.js',document.baseURI).href;return library}).catch(function(error){pdfJsPromise=null;throw error});
+return pdfJsPromise;
+}
+function setPdfPreviewError(message){pdfViewerStatus.hidden=false;pdfViewerStatus.textContent=message;pdfCanvas.hidden=true;pdfPageCounter.textContent='';pdfPrevious.disabled=true;pdfNext.disabled=true}
+function renderPdfPage(requestId){
+if(!pdfDocument||requestId!==pdfViewerRequest)return;
+if(pdfRenderTask){pdfRenderTask.cancel();pdfRenderTask=null}
+var pageNumber=pdfPageNumber;
+pdfViewerStatus.hidden=false;
+pdfViewerStatus.textContent='Memuat halaman '+pageNumber+'...';
+pdfCanvas.hidden=true;
+pdfDocument.getPage(pageNumber).then(function(page){
+if(requestId!==pdfViewerRequest)return;
+var baseViewport=page.getViewport({scale:1});
+var scale=Math.min(1.5,Math.max(.1,(pdfViewerStage.clientWidth-32)/baseViewport.width));
+var viewport=page.getViewport({scale:scale});
+var outputScale=window.devicePixelRatio||1;
+pdfCanvas.width=Math.ceil(viewport.width*outputScale);
+pdfCanvas.height=Math.ceil(viewport.height*outputScale);
+pdfCanvas.style.width=Math.floor(viewport.width)+'px';
+pdfCanvas.style.height=Math.floor(viewport.height)+'px';
+var context=pdfCanvas.getContext('2d');
+pdfRenderTask=page.render({canvasContext:context,viewport:viewport,transform:outputScale===1?null:[outputScale,0,0,outputScale,0,0]});
+return pdfRenderTask.promise;
+}).then(function(){
+if(requestId!==pdfViewerRequest)return;
+pdfViewerStatus.hidden=true;
+pdfCanvas.hidden=false;
+pdfPageCounter.textContent=pdfPageNumber+' / '+pdfDocument.numPages;
+pdfPrevious.disabled=pdfPageNumber<=1;
+pdfNext.disabled=pdfPageNumber>=pdfDocument.numPages;
+pdfRenderTask=null;
+}).catch(function(error){
+if(requestId!==pdfViewerRequest||error&&error.name==='RenderingCancelledException')return;
+setPdfPreviewError('Gagal menampilkan halaman '+pageNumber+': '+error.message);
+pdfRenderTask=null;
+});
+}
+function changePdfPage(offset){
+if(!pdfDocument)return;
+var nextPage=pdfPageNumber+offset;
+if(nextPage<1||nextPage>pdfDocument.numPages)return;
+pdfPageNumber=nextPage;
+renderPdfPage(pdfViewerRequest);
+}
+function openPdfPreview(url,title,link){
+pdfViewerRequest++;
+var requestId=pdfViewerRequest;
+activePdfLink=link;
+pdfViewerTitle.textContent=title;
+pdfViewer.hidden=false;
+document.body.classList.add('education-pdf-viewer-open');
+pdfViewerStatus.hidden=false;
+pdfViewerStatus.textContent='Memuat pratinjau PDF...';
+pdfCanvas.hidden=true;
+pdfPageCounter.textContent='';
+pdfPrevious.disabled=true;
+pdfNext.disabled=true;
+pdfViewerClose.focus();
+if(pdfLoadingTask){var previousTask=pdfLoadingTask;pdfLoadingTask=null;previousTask.destroy().catch(function(error){console.error('Gagal menutup pratinjau PDF sebelumnya:',error)})}
+pdfDocument=null;
+loadPdfJs().then(function(library){
+if(requestId!==pdfViewerRequest)return;
+pdfLoadingTask=library.getDocument({url:url,isEvalSupported:false,useSystemFonts:true});
+return pdfLoadingTask.promise;
+}).then(function(documentPdf){
+if(!documentPdf||requestId!==pdfViewerRequest)return;
+pdfDocument=documentPdf;
+pdfPageNumber=1;
+renderPdfPage(requestId);
+}).catch(function(error){
+if(requestId!==pdfViewerRequest)return;
+setPdfPreviewError('Gagal memuat pratinjau PDF: '+error.message);
+});
+}
+function closePdfPreview(){
+if(pdfViewer.hidden)return;
+pdfViewerRequest++;
+if(pdfRenderTask){pdfRenderTask.cancel();pdfRenderTask=null}
+if(pdfLoadingTask){var closingTask=pdfLoadingTask;pdfLoadingTask=null;closingTask.destroy().catch(function(error){console.error('Gagal menutup pratinjau PDF:',error)})}
+pdfDocument=null;
+pdfViewer.hidden=true;
+document.body.classList.remove('education-pdf-viewer-open');
+if(activePdfLink)activePdfLink.focus();
+}
+pdfViewerClose.addEventListener('click',closePdfPreview);
+pdfPrevious.addEventListener('click',function(){changePdfPage(-1)});
+pdfNext.addEventListener('click',function(){changePdfPage(1)});
+document.addEventListener('keydown',function(event){if(event.key==='Escape'&&!pdfViewer.hidden)closePdfPreview()});
+window.addEventListener('resize',function(){if(!pdfViewer.hidden&&pdfDocument)renderPdfPage(pdfViewerRequest)});
 materials.forEach(function(material){
 var link=document.createElement('a');
 link.className='education-pdf-card';
 link.href='pdf/'+encodeURIComponent(material.file);
-link.target='_blank';
-link.rel='noopener noreferrer';
+link.setAttribute('aria-haspopup','dialog');
+link.addEventListener('click',function(event){
+event.preventDefault();
+openPdfPreview(link.href,material.title,link);
+});
 var icon=document.createElement('span');
 icon.className='education-pdf-icon';
 icon.setAttribute('aria-hidden','true');
