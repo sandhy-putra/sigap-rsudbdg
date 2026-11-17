@@ -240,11 +240,12 @@ if(!phoneGrid||phoneGrid.children.length<2)throw new Error('Bagian telepon penti
 phoneGrid.classList.add('phone-grid');
 phoneGrid.children[0].classList.add('phone-emergency');
 phoneGrid.children[1].classList.add('phone-contacts');
+Array.prototype.forEach.call(document.querySelectorAll('a[href^="https://wa.me/"]'),function(link){link.target='_self'});
 var complaintCard=document.createElement('div');
 complaintCard.className='c phone-complaint-poster';
 var complaintLink=document.createElement('a');
 complaintLink.href='https://wa.me/628211501996';
-complaintLink.target='_blank';
+complaintLink.target='_self';
 complaintLink.rel='noopener noreferrer';
 complaintLink.setAttribute('aria-label','Hubungi layanan pengaduan IGD melalui WhatsApp di 0821-150-1996');
 var complaintImage=document.createElement('img');
@@ -579,6 +580,10 @@ pdfPageCounter.textContent='';
 pdfPrevious.disabled=true;
 pdfNext.disabled=true;
 pdfViewerClose.focus();
+if(location.protocol==='file:'){
+setPdfPreviewError('Pratinjau PDF memerlukan SIGAP yang dibuka melalui alamat HTTP/HTTPS. Jangan buka file index.html langsung dari penyimpanan perangkat.');
+return;
+}
 if(pdfLoadingTask){var previousTask=pdfLoadingTask;pdfLoadingTask=null;previousTask.destroy().catch(function(error){console.error('Gagal menutup pratinjau PDF sebelumnya:',error)})}
 pdfDocument=null;
 loadPdfJs().then(function(library){
