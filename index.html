@@ -240,11 +240,11 @@ if(!phoneGrid||phoneGrid.children.length<2)throw new Error('Bagian telepon penti
 phoneGrid.classList.add('phone-grid');
 phoneGrid.children[0].classList.add('phone-emergency');
 phoneGrid.children[1].classList.add('phone-contacts');
-Array.prototype.forEach.call(document.querySelectorAll('a[href^="https://wa.me/"]'),function(link){link.target='_self'});
+Array.prototype.forEach.call(document.querySelectorAll('a[href^="https://wa.me/"]'),function(link){link.href=link.href.replace('https://wa.me/','https://web.whatsapp.com/send?phone=');link.target='_self'});
 var complaintCard=document.createElement('div');
 complaintCard.className='c phone-complaint-poster';
 var complaintLink=document.createElement('a');
-complaintLink.href='https://wa.me/628211501996';
+complaintLink.href='https://web.whatsapp.com/send?phone=628211501996';
 complaintLink.target='_self';
 complaintLink.rel='noopener noreferrer';
 complaintLink.setAttribute('aria-label','Hubungi layanan pengaduan IGD melalui WhatsApp di 0821-150-1996');
